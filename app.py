@@ -1,4 +1,5 @@
 import base64
+import os
 from io import BytesIO
 from typing import Tuple
 
@@ -80,4 +81,6 @@ def quantize_image(image: Image, kmeans: KMeans) -> np.ndarray:
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug=False,
+            host="0.0.0.0",
+            port=int(os.environ.get("PORT", 8080)))
