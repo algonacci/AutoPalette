@@ -13,25 +13,14 @@ from sklearn.cluster import KMeans
 
 matplotlib.use("agg")  # Set the backend to non-interactive
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
-
-
 app = Flask(__name__)
 app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
-
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         image = request.files["image"].read()
-        if image.filename == "" or not allowed_file(image.filename):
-            return "Invalid file format"
-
         uploaded_image = base64.b64encode(
             image).decode()  # Convert to base64
         img = Image.open(BytesIO(image))
