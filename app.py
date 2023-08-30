@@ -1,54 +1,70 @@
 import base64
-import os
 from io import BytesIO
 from typing import Tuple
+import matplotlib
+
 
 import matplotlib.pyplot as plt
 import numpy as np
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, render_template, request
 from PIL import Image
+import requests
 from sklearn.cluster import KMeans
 
+matplotlib.use("agg")  # Set the backend to non-interactive
+
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024  # 5MB
+
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
         image = request.files["image"].read()
+        if image.filename == "" or not allowed_file(image.filename):
+            return "Invalid file format"
+
+        uploaded_image = base64.b64encode(
+            image).decode()  # Convert to base64
         img = Image.open(BytesIO(image))
         num_colors = 8
-        color_palette, kmeans = get_palette(img, num_colors)
+        color_palette = get_palette(img, num_colors)
 
-        color_palette_sorted = np.array(
-            sorted(color_palette, key=lambda x: x.mean())[::-1])
-
-        plt.imshow(color_palette_sorted[np.newaxis, :, :])
-        plt.axis("off")
-        palette_image_path = "static/palette_image.png"
-        plt.savefig(palette_image_path, bbox_inches="tight",
-                    pad_inches=0, format="png")
-        plt.close()
-
-        with open(palette_image_path, "rb") as img_file:
-            palette_image_base64 = base64.b64encode(img_file.read()).decode()
+        palette_image_base64 = get_palette_image(color_palette)
 
         return render_template(
             "index.html",
             color_palette=color_palette,
-            palette_image_base64=palette_image_base64
+            palette_image_base64=palette_image_base64,
+            uploaded_image=uploaded_image
         )
 
     return render_template("index.html")
 
 
-def image_to_base64(image):
-    image_pil = Image.fromarray((image * 255).astype(np.uint8))
-    if image_pil.mode == "RGBA":
-        image_pil = image_pil.convert("RGB")
-    buffer = BytesIO()
-    image_pil.save(buffer, format="JPEG")
-    return base64.b64encode(buffer.getvalue()).decode()
+def get_palette_image(color_palette):
+    color_palette_sorted = np.array(
+        sorted(color_palette, key=lambda x: x.mean())[::-1])
+
+    plt.imshow(color_palette_sorted[np.newaxis, :, :])
+    plt.axis("off")
+    palette_image_path = "static/palette_image.png"
+    plt.savefig(palette_image_path, bbox_inches="tight",
+                pad_inches=0, format="png")
+    plt.close()
+
+    with open(palette_image_path, "rb") as img_file:
+        palette_image_base64 = base64.b64encode(img_file.read()).decode()
+
+    return palette_image_base64
 
 
 def load_image(path: str) -> np.ndarray:
@@ -62,25 +78,19 @@ def load_image(path: str) -> np.ndarray:
 
 def get_palette(
     img: Image, n_colors: int, resize_shape: Tuple[int, int] = (100, 100)
-) -> Tuple[np.ndarray, KMeans]:
+) -> np.ndarray:
     img = np.asarray(img.resize(resize_shape)) / 255.0
     h, w, c = img.shape
     img_arr = img.reshape(h * w, c)
     kmeans = KMeans(n_clusters=n_colors, n_init="auto").fit(img_arr)
     palette = (kmeans.cluster_centers_ * 255).astype(int)
-    return palette, kmeans
+    return palette
 
 
-def quantize_image(image: Image, kmeans: KMeans) -> np.ndarray:
-    image_np = np.asarray(image) / 255.0
-    h, w, c = image_np.shape
-    flatten = image_np.reshape(h * w, c)
-    pixel_rgb_clusters = kmeans.predict(flatten)
-    image_quantized = kmeans.cluster_centers_[pixel_rgb_clusters]
-    return image_quantized.reshape(h, w, c)
+@app.errorhandler(500)
+def internal_server_error(error):
+    return "Mohon Bersabar, Coba Lagi"
 
 
 if __name__ == "__main__":
-    app.run(debug=False,
-            host="0.0.0.0",
-            port=int(os.environ.get("PORT", 8080)))
+    app.run(debug=False, host="0.0.0.0", port=8080)
