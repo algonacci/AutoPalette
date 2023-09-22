@@ -1,107 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Auto Palette</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
 
-  <body>
-    <div class="container mx-auto p-8">
-      <h1 class="flex justify-center text-3xl font-semibold mb-4">
-        Auto Palette
-      </h1>
-      <div class="flex justify-center items-center">
-        <div class="max-w-3xl w-full bg-white p-8 sm:p-12 rounded-md shadow-md">
-          <form
-            action="/"
-            method="POST"
-            enctype="multipart/form-data"
-            class="space-y-6"
-          >
-            <div
-              id="drop-zone"
-              class="relative border-dashed border-2 border-gray-300 p-8 sm:p-12 rounded-md shadow-top"
-            >
-              <div class="text-center">
-                <p class="text-gray-500">Tarik dan lepaskan gambar disini</p>
-                <p class="text-sm text-gray-500">atau</p>
-                <input
-                  type="file"
-                  name="image"
-                  accept="image/*"
-                  class="mx-auto mt-4 w-full p-4 border border-gray-300 rounded text-center"
-                  id="imageInput"
-                  onchange="loadFile(event)"
-                />
-              </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Auto Palette</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body>
+  <div class="container mx-auto p-8">
+    <h1 class="flex justify-center text-3xl font-semibold mb-4">
+      Auto Palette 🎨
+    </h1>
+    <div class="flex justify-center items-center">
+      <div class="max-w-3xl w-full bg-white p-8 sm:p-12 rounded-md shadow-md">
+        <form action="/" method="POST" enctype="multipart/form-data" class="space-y-6">
+          <div id="drop-zone" class="relative border-dashed border-2 border-gray-300 p-8 sm:p-12 rounded-md shadow-top">
+            <div class="text-center">
+              <p class="text-gray-500">Tarik dan lepaskan gambar disini</p>
+              <p class="text-sm text-gray-500">atau</p>
+              <input type="file" name="image" accept="image/*"
+                class="mx-auto mt-4 w-full p-4 border border-gray-300 rounded text-center" id="imageInput"
+                onchange="loadFile(event)" />
             </div>
-            <button
-              type="submit"
-              class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition duration-300"
-            >
-              Cari Palet Warna
-            </button>
-          </form>
-
-          <div class="flex flex-col justify-center items-center mt-8 mx-auto">
-            <h2 class="text-xl font-semibold mb-4">Gambar yang diunggah</h2>
-            <img id="output" class="w-1/2 h-1/2 mb-4" />
-            {% if uploaded_image %}
-            <img
-              id="uploaded_image"
-              src="data:image/jpeg;base64,{{ uploaded_image }}"
-              alt="Uploaded Image"
-            />
-            {% endif %}
           </div>
+          <button type="submit"
+            class="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 transition duration-300">
+            Cari Palet Warna
+          </button>
+        </form>
 
-          <div class="flex flex-col justify-center items-center mt-8">
-            <h2 class="text-xl font-semibold mb-4">Palet warna</h2>
-            <img
-              src="{{ url_for('static', filename='palette_image.png') }}"
-              alt="Palette Image"
-            />
+        <div class="flex flex-col justify-center items-center mt-8 mx-auto">
+          <h2 class="text-xl font-semibold mb-4" id="uploaded-image-heading" style="display: none;">Gambar yang diunggah
+          </h2>
+          <img id="output" class="w-1/2 h-1/2 mb-4" />
+          {% if uploaded_image %}
+          <h2 class="text-xl font-semibold mb-4">Hasil</h2>
+          <img id="uploaded_image" src="data:image/jpeg;base64,{{ uploaded_image }}" alt="Uploaded Image" />
+          {% endif %}
+        </div>
+
+        {% if color_palette_hex %}
+        <!-- Add this section for displaying hex color values -->
+        <div class="flex flex-col justify-center items-center mt-8">
+          <h2 class="text-xl font-semibold mb-4">Palet Warna</h2>
+          <div class="flex flex-wrap justify-center space-x-2">
+            {% for color_hex in color_palette_hex %}
+            <div class="w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 p-2 text-center">
+              <div class="rounded-full w-16 h-16 mx-auto mb-2" style="background-color: {{ color_hex }};"></div>
+              <div class="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl cursor-pointer copy-color-code"
+                data-color="{{ color_hex }}">
+                {{ color_hex }}
+              </div>
+
+            </div>
+            {% endfor %}
           </div>
         </div>
+        {% endif %}
+
+        {% if palette_image_base64 %}
+        <div class="flex flex-col justify-center items-center mt-8">
+          <h2 class="text-xl font-semibold mb-4">Gambar Palet Warna</h2>
+          <img src="{{ url_for('static', filename='palette_image.png') }}" alt="Palette Image" />
+        </div>
+        {% endif %}
       </div>
     </div>
+  </div>
 
-    <script>
-      var loadFile = function (event) {
-        var output = document.getElementById("output");
-        output.src = URL.createObjectURL(event.target.files[0]);
-      };
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
 
-      const dropZone = document.getElementById("drop-zone");
-
-      dropZone.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        dropZone.classList.add("border-blue-500");
-      });
-
-      dropZone.addEventListener("dragleave", () => {
-        dropZone.classList.remove("border-blue-500");
-      });
-
-      dropZone.addEventListener("drop", (e) => {
-        e.preventDefault();
-        dropZone.classList.remove("border-blue-500");
-
-        const file = e.dataTransfer.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function (event) {
-            const output = document.getElementById("output");
-            output.src = event.target.result;
-          };
-          reader.readAsDataURL(file);
-        }
-
-        const fileInput = document.querySelector('input[name="image"]');
-        fileInput.files = e.dataTransfer.files;
-      });
-    </script>
-  </body>
 </html>

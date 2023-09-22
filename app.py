@@ -25,13 +25,16 @@ def index():
             image).decode()  # Convert to base64
         img = Image.open(BytesIO(image))
         num_colors = 8
-        color_palette = get_palette(img, num_colors)
+        color_palette, color_palette_hex = get_palette(img, num_colors)
+
+        color_palette_hex.sort(reverse=True)
 
         palette_image_base64 = get_palette_image(color_palette)
 
         return render_template(
             "index.html",
             color_palette=color_palette,
+            color_palette_hex=color_palette_hex,
             palette_image_base64=palette_image_base64,
             uploaded_image=uploaded_image
         )
@@ -72,8 +75,10 @@ def get_palette(
     h, w, c = img.shape
     img_arr = img.reshape(h * w, c)
     kmeans = KMeans(n_clusters=n_colors, n_init="auto").fit(img_arr)
-    palette = (kmeans.cluster_centers_ * 255).astype(int)
-    return palette
+    palette_rgb = (kmeans.cluster_centers_ * 255).astype(int)
+    palette_hex = [matplotlib.colors.rgb2hex(
+        color) for color in palette_rgb/255]
+    return palette_rgb, palette_hex
 
 
 @app.errorhandler(500)
