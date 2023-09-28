@@ -43,7 +43,8 @@
           <div class="flex flex-wrap justify-center space-x-2">
             {% for color_hex in color_palette_hex %}
             <div class="w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6 p-2 text-center">
-              <div class="rounded-full w-16 h-16 mx-auto mb-2" style="background-color: {{ color_hex }};"></div>
+              <div class="rounded-full w-16 h-16 mx-auto mb-2 cursor-pointer copy-color-code"
+                data-color="{{ color_hex }}" style="background-color: {{ color_hex }};"></div>
               <div class="text-xs sm:text-sm md:text-base lg:text-lg xl:text-xl cursor-pointer copy-color-code"
                 data-color="{{ color_hex }}">
                 {{ color_hex }}
