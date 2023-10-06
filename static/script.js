@@ -41,7 +41,7 @@ colorCodeElements.forEach((element) => {
   element.addEventListener("click", () => {
     const colorCode = element.getAttribute("data-color");
     copyToClipboard(colorCode);
-    alert(`Copied: ${colorCode}`);
+    Swal.fire("Good job!", `You copied: ${colorCode}`, "success");
   });
 });
 
