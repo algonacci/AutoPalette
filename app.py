@@ -42,7 +42,7 @@ def index():
     return render_template("index.html")
 
 
-@app.route("/api/", methods=["POST"])
+@app.route("/api", methods=["POST"])
 def api_generate_palette():
     if request.method == "POST":
         image = request.files["image"].read()
