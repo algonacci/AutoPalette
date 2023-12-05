@@ -6,7 +6,7 @@ import matplotlib
 
 import matplotlib.pyplot as plt
 import numpy as np
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, jsonify
 from PIL import Image
 import requests
 from sklearn.cluster import KMeans
@@ -42,6 +42,25 @@ def index():
     return render_template("index.html")
 
 
+@app.route("/api/", methods=["POST"])
+def api_generate_palette():
+    if request.method == "POST":
+        image = request.files["image"].read()
+        img = Image.open(BytesIO(image))
+        num_colors = 8
+        color_palette, color_palette_hex = get_palette(img, num_colors)
+
+        color_palette_hex.sort(reverse=True)
+
+        _, palette_image_path = get_palette_image(color_palette)
+
+        return jsonify({
+            "palette_image_path": f"https://{request.host}/{palette_image_path}",
+            "color_palette": color_palette.tolist(),
+            "color_palette_hex": color_palette_hex,
+        }), 200
+
+
 def get_palette_image(color_palette):
     color_palette_sorted = np.array(
         sorted(color_palette, key=lambda x: x.mean())[::-1])
@@ -56,7 +75,7 @@ def get_palette_image(color_palette):
     with open(palette_image_path, "rb") as img_file:
         palette_image_base64 = base64.b64encode(img_file.read()).decode()
 
-    return palette_image_base64
+    return palette_image_base64, palette_image_path
 
 
 def load_image(path: str) -> np.ndarray:
