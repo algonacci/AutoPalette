@@ -61,6 +61,31 @@ def api_generate_palette():
         }), 200
 
 
+@app.route("/tritone", methods=["POST"])
+def tritone():
+    if request.method == "POST":
+        image = request.files["image"].read()
+        uploaded_image = base64.b64encode(image).decode()
+        img = Image.open(BytesIO(image))
+        
+        tritone_img = apply_tritone(img)
+        
+        # Save tritone image
+        tritone_buffer = BytesIO()
+        tritone_img.save(tritone_buffer, format='PNG')
+        tritone_base64 = base64.b64encode(tritone_buffer.getvalue()).decode()
+        
+        # Define tritone colors for display
+        tritone_colors = ["#0f0e83", "#e44c9a", "#00aa13"]  # Resistance Blue, Brave Pink, Hero Green
+        
+        return render_template(
+            "index.html",
+            uploaded_image=uploaded_image,
+            tritone_image=tritone_base64,
+            tritone_colors=tritone_colors
+        )
+
+
 def get_palette_image(color_palette):
     color_palette_sorted = np.array(
         sorted(color_palette, key=lambda x: x.mean())[::-1])
@@ -98,6 +123,58 @@ def get_palette(
     palette_hex = [matplotlib.colors.rgb2hex(
         color) for color in palette_rgb/255]
     return palette_rgb, palette_hex
+
+
+def apply_tritone(img: Image) -> Image:
+    # Define the three tritone colors
+    resistance_blue = np.array([15, 14, 131])
+    brave_pink = np.array([228, 76, 154])  # #e44c9a
+    hero_green = np.array([0, 170, 19])    # #00aa13
+    
+    # Convert image to numpy array
+    img_array = np.array(img)
+    original_shape = img_array.shape
+    
+    # Convert to grayscale to get luminance values
+    if len(img_array.shape) == 3:
+        grayscale = np.dot(img_array[...,:3], [0.299, 0.587, 0.114])
+    else:
+        grayscale = img_array
+    
+    # Normalize grayscale values to 0-1
+    grayscale_norm = grayscale / 255.0
+    
+    # Create output array
+    tritone_img = np.zeros((original_shape[0], original_shape[1], 3), dtype=np.uint8)
+    
+    # Map grayscale values to tritone colors
+    # Dark areas (0-0.33) -> Resistance Blue
+    # Mid areas (0.33-0.67) -> Brave Pink  
+    # Light areas (0.67-1.0) -> Hero Green
+    
+    dark_mask = grayscale_norm <= 0.33
+    mid_mask = (grayscale_norm > 0.33) & (grayscale_norm <= 0.67)
+    light_mask = grayscale_norm > 0.67
+    
+    # For smoother transitions, blend colors based on luminance within each range
+    for i in range(original_shape[0]):
+        for j in range(original_shape[1]):
+            lum = grayscale_norm[i, j]
+            
+            if lum <= 0.33:
+                # Blend from black to resistance blue
+                blend_factor = lum / 0.33
+                tritone_img[i, j] = resistance_blue * blend_factor
+            elif lum <= 0.67:
+                # Blend from resistance blue to brave pink
+                blend_factor = (lum - 0.33) / 0.34
+                tritone_img[i, j] = resistance_blue * (1 - blend_factor) + brave_pink * blend_factor
+            else:
+                # Blend from brave pink to hero green
+                blend_factor = (lum - 0.67) / 0.33
+                tritone_img[i, j] = brave_pink * (1 - blend_factor) + hero_green * blend_factor
+    
+    return Image.fromarray(tritone_img)
 
 
 @app.errorhandler(500)

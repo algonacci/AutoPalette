@@ -26,6 +26,20 @@
           </button>
         </form>
 
+        <form action="/tritone" method="POST" enctype="multipart/form-data" class="space-y-6 mt-4" id="tritoneForm" style="display: none;">
+          <input type="file" name="image" accept="image/*" id="tritoneImageInput" />
+          <button type="submit" class="w-full bg-purple-600 text-white py-3 rounded-md hover:bg-purple-700 transition duration-300">
+            Buat Tritone Effect
+          </button>
+        </form>
+
+        <button type="button" id="tritoneButton" onclick="createTritoneEffect()" 
+          class="w-full bg-purple-600 text-white py-3 rounded-md hover:bg-purple-700 transition duration-300 mt-4" 
+          style="display: none;">
+          Buat Tritone Effect
+        </button>
+
+
         <div class="flex flex-col justify-center items-center mt-8 mx-auto">
           <h2 class="text-xl font-semibold mb-4" id="uploaded-image-heading" style="display: none;">Gambar yang diunggah
           </h2>
@@ -60,6 +74,32 @@
         <div class="flex flex-col justify-center items-center mt-8">
           <h2 class="text-xl font-semibold mb-4">Gambar Palet Warna</h2>
           <img src="{{ url_for('static', filename='palette_image.png') }}" alt="Palette Image" />
+        </div>
+        {% endif %}
+
+        {% if tritone_image %}
+        <div class="flex flex-col justify-center items-center mt-8">
+          <h2 class="text-xl font-semibold mb-4">Hasil Tritone</h2>
+          <img src="data:image/png;base64,{{ tritone_image }}" alt="Tritone Image" class="max-w-lg mb-4" />
+          
+          <h3 class="text-lg font-medium mb-4">Warna Tritone</h3>
+          <div class="flex justify-center space-x-4 mb-4">
+            <div class="text-center">
+              <div class="w-16 h-16 rounded-full mx-auto mb-2" style="background-color: #0f0e83;"></div>
+              <div class="text-sm">Resistance Blue</div>
+              <div class="text-xs">#0f0e83</div>
+            </div>
+            <div class="text-center">
+              <div class="w-16 h-16 rounded-full mx-auto mb-2" style="background-color: #e44c9a;"></div>
+              <div class="text-sm">Brave Pink</div>
+              <div class="text-xs">#e44c9a</div>
+            </div>
+            <div class="text-center">
+              <div class="w-16 h-16 rounded-full mx-auto mb-2" style="background-color: #00aa13;"></div>
+              <div class="text-sm">Hero Green</div>
+              <div class="text-xs">#00aa13</div>
+            </div>
+          </div>
         </div>
         {% endif %}
       </div>
